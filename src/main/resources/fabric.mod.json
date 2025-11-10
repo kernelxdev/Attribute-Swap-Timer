@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "attributeswaptimer",
+  "version": "${version}",
+  "name": "AttributeSwapTimer",
+  "description": "Tracks timing accuracy for breach swaps and attribute swaps in PVP",
+  "authors": [
+    "kernelxdev"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/attributeswaptimer/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-datagen": [
+      "xyz.kernelxdev.attributeswaptimer.client.AttributeswaptimerDataGenerator"
+    ],
+    "client": [
+      "xyz.kernelxdev.attributeswaptimer.client.AttributeswaptimerClient"
+    ],
+    "main": [
+      "xyz.kernelxdev.attributeswaptimer.Attributeswaptimer"
+    ]
+  },
+  "mixins": [
+    "attributeswaptimer.mixins.json",
+    {
+      "config": "attributeswaptimer.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
