@@ -22,7 +22,7 @@ Built for Fabric 1.21.10, this mod is lightweight and works on any server.
 
 The mod's robust detection logic identifies a true attack (based on attack cooldown and hand swing) and then starts a timer. The moment you swap to a new item in your main hand, the timer stops and displays the results.
 
-The results stay on-screen for 2.5 seconds—just long enough for you to read them before your next engagement.
+The results stay on-screen for 0.5 seconds—just long enough for you to read them before your next engagement.
 
 **What You'll See:**
 
