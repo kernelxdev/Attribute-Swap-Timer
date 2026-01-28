@@ -2,11 +2,11 @@ package xyz.kernelxdev.attributeswaptimer.client;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback; // <--- CHANGED IMPORT
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.render.RenderTickCounter;
+// import net.minecraft.client.render.RenderTickCounter; // <--- REMOVED (Too new)
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
@@ -46,10 +46,8 @@ public class AttributeswaptimerClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
 
-        HudElementRegistry.addLast(
-                Identifier.of("attributeswaptimer", "swap_timer"),
-                this::renderHud
-        );
+        // --- FIXED REGISTRATION FOR OLDER VERSIONS ---
+        HudRenderCallback.EVENT.register(this::renderHud);
 
         LOGGER.info("Attribute Swap Timer initialized successfully!");
     }
@@ -136,7 +134,8 @@ public class AttributeswaptimerClient implements ClientModInitializer {
         }
     }
 
-    private void renderHud(DrawContext context, RenderTickCounter tickCounter) {
+    // --- CHANGED ARGUMENT FROM RenderTickCounter to float ---
+    private void renderHud(DrawContext context, float tickDelta) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) return;
         if (client.options.hudHidden) return;
