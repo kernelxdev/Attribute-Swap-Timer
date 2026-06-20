@@ -3,14 +3,14 @@ package xyz.kernelxdev.attributeswaptimer.client;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,21 +47,21 @@ public class AttributeswaptimerClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
 
         HudElementRegistry.addLast(
-                Identifier.of("attributeswaptimer", "swap_timer"),
+                Identifier.fromNamespaceAndPath("attributeswaptimer", "swap_timer"),
                 this::renderHud
         );
 
         LOGGER.info("Attribute Swap Timer initialized successfully!");
     }
 
-    private void onClientTick(MinecraftClient client) {
-        ClientPlayerEntity player = client.player;
+    private void onClientTick(Minecraft client) {
+        LocalPlayer player = client.player;
         if (player == null) return;
 
-        ItemStack currentMainHand = player.getStackInHand(Hand.MAIN_HAND);
+        ItemStack currentMainHand = player.getItemInHand(InteractionHand.MAIN_HAND);
 
-        float currentAttackCooldown = player.getAttackCooldownProgress(0.0f);
-        boolean currentHandSwinging = player.handSwinging;
+        float currentAttackCooldown = player.getAttackStrengthScale(0.0f);
+        boolean currentHandSwinging = player.swinging;
 
         boolean attackCooldownReset = lastAttackCooldown > 0.9f && currentAttackCooldown < 0.9f;
         boolean handSwingStarted = !lastHandSwinging && currentHandSwinging;
@@ -70,7 +70,7 @@ public class AttributeswaptimerClient implements ClientModInitializer {
             itemOnCooldownReset = previousTickItem.copy();
             trackingAttack = true;
             ticksSinceCooldownReset = 0;
-            LOGGER.debug("Cooldown reset detected. Item: {}", itemOnCooldownReset.getName().getString());
+            LOGGER.debug("Cooldown reset detected. Item: {}", itemOnCooldownReset.getHoverName().getString());
         }
 
         if (trackingAttack) {
@@ -83,7 +83,7 @@ public class AttributeswaptimerClient implements ClientModInitializer {
                 ticksSinceAttack = 0;
                 trackingAttack = false;
 
-                LOGGER.info("Attack confirmed! Item: {}", lastMainHandItem.getName().getString());
+                LOGGER.info("Attack confirmed! Item: {}", lastMainHandItem.getHoverName().getString());
             }
 
             if (ticksSinceCooldownReset > 5) {
@@ -98,7 +98,7 @@ public class AttributeswaptimerClient implements ClientModInitializer {
         if (trackingSwap) {
             ticksSinceAttack++;
 
-            if (!ItemStack.areItemsEqual(lastMainHandItem, currentMainHand)) {
+            if (!ItemStack.isSameItem(lastMainHandItem, currentMainHand)) {
                 long swapTime = System.currentTimeMillis();
                 long timeDiff = swapTime - lastAttackTime;
 
@@ -122,8 +122,8 @@ public class AttributeswaptimerClient implements ClientModInitializer {
                 trackingSwap = false;
 
                 LOGGER.info("Swap detected! From: {} To: {} | Ticks: {} | Ms: {} | Result: {}",
-                        lastMainHandItem.getName().getString(),
-                        currentMainHand.getName().getString(),
+                        lastMainHandItem.getHoverName().getString(),
+                        currentMainHand.getHoverName().getString(),
                         displayTicks,
                         displayMs,
                         timingResult);
@@ -136,15 +136,15 @@ public class AttributeswaptimerClient implements ClientModInitializer {
         }
     }
 
-    private void renderHud(DrawContext context, RenderTickCounter tickCounter) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private void renderHud(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
+        Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
-        if (client.options.hudHidden) return;
+        if (client.gui.hud.isHidden()) return;
 
         if (System.currentTimeMillis() > displayUntil) return;
 
-        int screenWidth = context.getScaledWindowWidth();
-        int screenHeight = context.getScaledWindowHeight();
+        int screenWidth = graphics.guiWidth();
+        int screenHeight = graphics.guiHeight();
 
         int resultLineY = (screenHeight / 2) - 100;
 
@@ -165,31 +165,30 @@ public class AttributeswaptimerClient implements ClientModInitializer {
             resultColor = 0xFFFF0000;
         }
 
-        int ticksWidth = client.textRenderer.getWidth(ticksText);
-        context.drawText(
-                client.textRenderer,
-                Text.literal(ticksText),
+        int ticksWidth = client.font.width(ticksText);
+        graphics.text(
+                client.font,
+                Component.literal(ticksText),
                 (screenWidth - ticksWidth) / 2,
                 startY,
                 0xFFFFFFFF,
                 true
         );
 
-        // Draw Time
-        int msWidth = client.textRenderer.getWidth(msText);
-        context.drawText(
-                client.textRenderer,
-                Text.literal(msText),
+        int msWidth = client.font.width(msText);
+        graphics.text(
+                client.font,
+                Component.literal(msText),
                 (screenWidth - msWidth) / 2,
                 startY + 12,
                 0xFFFFFFFF,
                 true
         );
 
-        int resultWidth = client.textRenderer.getWidth(resultText);
-        context.drawText(
-                client.textRenderer,
-                Text.literal(resultText),
+        int resultWidth = client.font.width(resultText);
+        graphics.text(
+                client.font,
+                Component.literal(resultText),
                 (screenWidth - resultWidth) / 2,
                 startY + 24,
                 resultColor,
