@@ -139,7 +139,7 @@ public class AttributeswaptimerClient implements ClientModInitializer {
     private void renderHud(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
-        if (client.gui.hud.isHidden()) return;
+        if (client.options.hideGui) return;
 
         if (System.currentTimeMillis() > displayUntil) return;
 
